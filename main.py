@@ -12,7 +12,6 @@ from PyQt5.QtSql import QSqlDatabase, QSqlTableModel
 SCREEN_SIZE_main = [700, 500]
 SCREEN_SIZE_sub = [1910, 975]
 questions = []
-questions = ["how are you", "who are you"]
 answers = ["A", "B", "C", "D"]
 prices = {14: "15 ◇ 1000000", 13: "14 ◇ 500000", 12: "13 ◇ 250000", 11: "12 ◇ 125000",
           10: "11 ◇ 64000", 9: "10 ◇ 32000", 8: "9 ◇ 16000", 7: "8 ◇ 8000", 6: "7 ◇ 4000", 5: "6 ◇ 2000",
@@ -33,7 +32,6 @@ class FirstSubWindow(QWidget):
     def __init__(self):
         super().__init__()
         uic.loadUi('design3.ui', self)  # Загружаем дизайн
-        print("hi")
         self.label_7.hide()
         db = QSqlDatabase.addDatabase('QSQLITE')
         db.setDatabaseName('redactor_db.db')
@@ -121,7 +119,6 @@ class SecondSubWindow(QWidget):
         self.lineEdit_2.hide()
         self.label_2.hide()
         self.pushButton_4.hide()
-        # self.quest = ["?", "??", "???", "????", "?????"]
         self.flag = 0
         self.pushButton_2.clicked.connect(self.choose2)
         self.pushButton.clicked.connect(self.choose)
@@ -150,9 +147,10 @@ class SecondSubWindow(QWidget):
             if self.flag == 1:
                 print(self.lineEdit_2.text().split(","))
                 self.chosen = [self.quest[int(i) - 1] for i in self.lineEdit_2.text().split(",")]
-                print(self.chosen)
                 stroka = "Список выбранных вопросов:" + "\n" + "\n".join(self.chosen)
-                questions = self.chosen
+                with open("question.txt", "wt", encoding="utf8") as f:
+                    f.write("")
+                    f.write("@".join([self.quest[int(i.strip()) - 1] for i in self.lineEdit_2.text().split(",")]))
                 self.plainTextEdit.setPlainText(stroka)
                 self.pushButton_4.show()
             elif self.flag == 2:
@@ -163,11 +161,9 @@ class SecondSubWindow(QWidget):
                     print(self.spisok)
                     stroka = "Список выбранных вопросов:" + "\n" + "\n".join(self.spisok)
                     self.plainTextEdit.setPlainText(stroka)
-                    # self.spisok = list(sample(self.quest, int(self.lineEdit.text())))
-                    # print(self.spisok)
-                    # stroka = "Список выбранных вопросов:" + "\n" + "\n".join(self.spisok)
-                    questions = self.spisok
-                    # self.plainTextEdit.setPlainText(stroka)
+                    with open("question.txt", "wt", encoding="utf8") as f:
+                        f.write("")
+                        f.write("@".join(list(sample(self.quest, int(self.lineEdit.text())))))
                     self.pushButton_4.show()
                 except Error1:
                     self.label_2.show()
@@ -190,6 +186,9 @@ class SecondSubWindow(QWidget):
         self.lineEdit.hide()
         self.lineEdit.setText("")
         stroka = "Список вопросов:" + "\n" + "\n".join(self.quest)
+        with open("question.txt", "wt", encoding="utf8") as f:
+            f.write("")
+            f.write("@".join(self.quest))
         self.plainTextEdit.setPlainText(stroka)
         self.pushButton_3.show()
         self.label.show()
@@ -211,55 +210,95 @@ class ThirdSubWindow(QWidget):
         self.pushButton_3.hide()
         self.pushButton_4.hide()
         self.pushButton_5.hide()
+        self.pushButton_6.hide()
         self.plainTextEdit.hide()
         self.plainTextEdit_2.hide()
         self.con = sqlite3.connect("redactor_db.db")
         self.cur = self.con.cursor()
-        # questions = ["how are you", "who are you"]
+        with open("question.txt", "rt", encoding="utf8") as f:
+            for i in f.read().split("@"):
+                questions.append(i)
+        print(questions)
         self.spisok = [prices[j] for j in range(len(questions))]
-        # print(self.spisok)
+        self.j = 0
+        self.itog = 0
         self.pushButton.clicked.connect(self.play)
 
     def correctA(self):
-        # print(self.i)
-        # print(self.cur.execute("""select Answer from redact where Question = ?""", (self.i, )).fetchone()[0])
         print("!")
-        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "A":
-            self.spisok[self.i] = self.spisok[self.i] + " ✅"
+        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "A"\
+                and self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ✅"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Вы дали правильный ответ")
-        else:
-            self.spisok[self.i] = self.spisok[self.i] + " ❌"
+            self.itog += countable[self.j]
+        elif self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ❌"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Ваш ответ неверный")
-        self.flag = 1
+        self.j += 1
+        self.pushButton_6.show()
+        self.pushButton_2.hide()
+        self.pushButton_3.hide()
+        self.pushButton_4.hide()
+        self.pushButton_5.hide()
+        self.pushButton_6.clicked.connect(self.play)
+        print(self.j)
 
     def correctB(self):
-        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "B":
-            self.spisok[self.i] = self.spisok[self.i] + " ✅"
+        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "B"\
+                and self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ✅"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Вы дали правильный ответ")
-        else:
-            self.spisok[self.i] = self.spisok[self.i] + " ❌"
+            self.itog += countable[self.j]
+        elif self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ❌"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Ваш ответ неверный")
-        self.flag = 1
+        self.j += 1
+        self.pushButton_6.show()
+        self.pushButton_2.hide()
+        self.pushButton_3.hide()
+        self.pushButton_4.hide()
+        self.pushButton_5.hide()
+        self.pushButton_6.clicked.connect(self.play)
+        print(self.j)
 
     def correctC(self):
-        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "C":
-            self.spisok[self.i] = self.spisok[self.i] + " ✅"
+        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "C" \
+                and self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ✅"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Вы дали правильный ответ")
-        else:
-            self.spisok[self.i] = self.spisok[self.i] + " ❌"
+            self.itog += countable[self.j]
+        elif self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ❌"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Ваш ответ неверный")
-        self.flag = 1
+        self.j += 1
+        self.pushButton_6.show()
+        self.pushButton_2.hide()
+        self.pushButton_3.hide()
+        self.pushButton_4.hide()
+        self.pushButton_5.hide()
+        self.pushButton_6.clicked.connect(self.play)
+        print(self.j)
 
     def correctD(self):
-        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "D":
-            self.spisok[self.i] = self.spisok[self.i] + " ✅"
+        if self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0] == "D"\
+                and self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ✅"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Вы дали правильный ответ")
-        else:
-            self.spisok[self.i] = self.spisok[self.i] + " ❌"
+            self.itog += countable[self.j]
+        elif self.j < len(questions):
+            self.spisok[self.j] = self.spisok[self.j] + " ❌"
             self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + "Ваш ответ неверный")
-        self.flag = 1
+        self.j += 1
+        self.pushButton_6.show()
+        self.pushButton_2.hide()
+        self.pushButton_3.hide()
+        self.pushButton_4.hide()
+        self.pushButton_5.hide()
+        self.pushButton_6.clicked.connect(self.play)
+        print(self.j)
 
     def play(self):
+        self.pushButton_6.hide()
         self.pushButton_2.show()
         self.pushButton_3.show()
         self.pushButton_4.show()
@@ -267,12 +306,12 @@ class ThirdSubWindow(QWidget):
         self.plainTextEdit.show()
         self.plainTextEdit_2.show()
         self.pushButton.hide()
-        j = 0
-        while j < len(questions):
-            self.i = questions[j]
-            self.flag = 0
+        self.plainTextEdit_2.setPlainText("\n".join(self.spisok))
+        print(self.j < len(questions))
+        print(self.j, questions)
+        if self.j < len(questions):
+            self.i = questions[self.j]
             text = self.i[0].upper() + self.i[1:] + "?"
-            # print(self.i)
             self.plainTextEdit.setPlainText(text)
             res = self.cur.execute("""select V1 from redact where Question = ?""", (self.i,)).fetchone()
             self.pushButton_2.setText("Вариант A: " + res[0])
@@ -282,14 +321,18 @@ class ThirdSubWindow(QWidget):
             self.pushButton_4.setText("Вариант C: " + res[0])
             res = self.cur.execute("""select V4 from redact where Question = ?""", (self.i,)).fetchone()
             self.pushButton_5.setText("Вариант D: " + res[0])
-            print(self.i)
-            print(self.cur.execute("""select Answer from redact where Question = ?""", (self.i,)).fetchone()[0])
             self.pushButton_2.clicked.connect(self.correctA)
             self.pushButton_3.clicked.connect(self.correctB)
             self.pushButton_4.clicked.connect(self.correctC)
             self.pushButton_5.clicked.connect(self.correctD)
-            if self.flag == 1:
-                j += 1
+        else:
+            self.pushButton_2.hide()
+            self.pushButton_3.hide()
+            self.pushButton_4.hide()
+            self.pushButton_5.hide()
+            self.pushButton_6.hide()
+            self.plainTextEdit.hide()
+            self.plainTextEdit_2.setPlainText("\n".join(self.spisok) + "\n" + f"Набранная вами сумма: {self.itog}")
 
 
 class Example(QMainWindow):
@@ -320,7 +363,6 @@ class Example(QMainWindow):
                                                 ("Редактор", "Ведущий", "Игрок"), 0, False)
         if ok_pressed:
             self.role = text
-            print(self.role)
             if self.role == "Редактор":
                 # self.change_red()
                 self.sub_window = FirstSubWindow()
